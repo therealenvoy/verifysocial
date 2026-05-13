@@ -1,7 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, MessageSquare, Star } from "lucide-react";
+import { CheckCircle, Clock, MessageSquare, Star, ChevronRight } from "lucide-react";
 
 export interface ConversationItemProps {
   id: string;
@@ -38,21 +37,38 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
     minimumFractionDigits: 0,
   }).format(spend);
 
+  // Safety colors
+  const safetyColor = {
+    safe: "text-success",
+    review: "text-warning",
+    blocked: "text-danger",
+  }[safety];
+
+  // Lifecycle colors
+  const lifecycleColor = {
+    "High‑Intent": "text-primary",
+    VIP: "text-warning",
+    Warm: "text-success",
+    Blocked: "text-danger",
+  }[lifecycle] || "text-text-secondary";
+
   return (
     <div
       className={cn(
-        "group flex cursor-pointer items-start gap-3 p-3 transition-colors hover:bg-elevated-surface/50",
-        selected && "bg-elevated-surface border-l-2 border-l-primary"
+        "group flex cursor-pointer items-start gap-3 p-3 transition-colors border-b border-subtle",
+        selected 
+          ? "bg-surface-elevated/30 border-l-2 border-l-primary" 
+          : "hover:bg-surface-elevated/20"
       )}
       onClick={onClick}
     >
-      {/* Avatar with status */}
+      {/* Avatar */}
       <div className="relative">
-        <div className={cn("flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium", avatarColor)}>
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded text-xs font-medium", avatarColor)}>
           {fanName.charAt(0)}
         </div>
         {unread && (
-          <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-surface" />
+          <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-surface-panel" />
         )}
       </div>
 
@@ -61,19 +77,25 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 truncate">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground truncate">
+              <span className={cn(
+                "text-sm font-medium truncate",
+                selected ? "text-foreground" : "text-text-secondary",
+                unread && "font-semibold"
+              )}>
                 {fanName}
               </span>
               {lifecycle.includes("VIP") && (
                 <Star className="h-3 w-3 text-warning fill-warning/20" />
               )}
             </div>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="text-xs text-text-secondary truncate">
-                {platform}
+            <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+              <span className="text-text-tertiary">{platform}</span>
+              <span className="text-text-tertiary">•</span>
+              <span className={cn("font-medium", lifecycleColor)}>
+                {lifecycle}
               </span>
-              <span className="text-xs text-text-tertiary">•</span>
-              <span className="text-xs font-medium text-foreground">
+              <span className="text-text-tertiary">•</span>
+              <span className="font-medium text-foreground">
                 {formattedSpend}
               </span>
             </div>
@@ -81,31 +103,44 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-xs text-text-tertiary">{timestamp}</span>
             {safety !== "safe" && (
-              <div className="flex items-center gap-0.5">
-                {safety === "review" && <Clock className="h-2.5 w-2.5 text-warning" />}
-                {safety === "blocked" && <MessageSquare className="h-2.5 w-2.5 text-danger" />}
-                <span className="text-[10px] uppercase text-text-tertiary">
-                  {safety}
-                </span>
+              <div className={cn("flex items-center gap-0.5 text-xs", safetyColor)}>
+                {safety === "review" && <Clock className="h-2.5 w-2.5" />}
+                {safety === "blocked" && <MessageSquare className="h-2.5 w-2.5" />}
+                <span className="uppercase">{safety}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Last message */}
-        <p className="mt-2 text-sm text-text-secondary line-clamp-2">
+        <p className={cn(
+          "mt-2 text-sm line-clamp-2",
+          selected ? "text-text-secondary" : "text-text-tertiary",
+          unread && "text-foreground font-medium"
+        )}>
           {lastMessage}
         </p>
 
-        {/* Lifecycle badge */}
-        <div className="mt-2">
-          <Badge
-            variant="subtle"
-            size="sm"
-            className="text-xs"
-          >
-            {lifecycle}
-          </Badge>
+        {/* Metadata row */}
+        <div className="mt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {selected && (
+              <ChevronRight className="h-3 w-3 text-primary" />
+            )}
+            <span className={cn(
+              "text-xs px-2 py-0.5 rounded-sm",
+              safety === "safe" ? "bg-success/10 text-success" :
+              safety === "review" ? "bg-warning/10 text-warning" :
+              "bg-danger/10 text-danger"
+            )}>
+              {safety}
+            </span>
+          </div>
+          {selected && (
+            <span className="text-xs text-text-tertiary">
+              Click to reply
+            </span>
+          )}
         </div>
       </div>
     </div>

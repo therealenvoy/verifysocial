@@ -27,10 +27,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       <div className="max-w-[85%]">
         <div
           className={cn(
-            "rounded-xl p-4",
+            "rounded-lg p-3 border",
             isAI
-              ? "bg-primary/5 border border-primary/10"
-              : "bg-surface border border-border"
+              ? "bg-surface-elevated border-border-medium"
+              : "bg-surface-panel border-border-medium"
           )}
         >
           <p className="text-sm text-foreground">{text}</p>
