@@ -1,0 +1,12 @@
+[build]
+builder = "railpack"
+buildCommand = "npm run build"
+startCommand = "npm start"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+
+[environments.production]
+variables = { NODE_ENV = "production", NO_CACHE = "1" }

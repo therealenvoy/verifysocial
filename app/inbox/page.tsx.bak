@@ -1,0 +1,521 @@
+     1|'use client';
+     2|
+     3|import { useState } from 'react';
+     4|import { 
+     5|  MessageSquare, User, Gift, Search, Filter, ChevronRight, Check, Edit, X, Send, 
+     6|  Clock, AlertCircle, Shield, DollarSign, Zap, Target, Heart, Calendar, Star, MoreVertical,
+     7|  Settings, ArrowRight, Plus
+     8|} from 'lucide-react';
+     9|import { cn } from "@/lib/utils";
+    10|
+    11|// Mock data
+    12|const conversations = [
+    13|  {
+    14|    id: '1',
+    15|    fanName: 'Alex Johnson',
+    16|    lastMessage: 'Hey! Loved your latest post. Can you make a custom video?',
+    17|    timestamp: '2 min ago',
+    18|    unread: true,
+    19|    spend: 245,
+    20|    lifecycle: 'High‑Intent',
+    21|    safety: 'safe',
+    22|    platform: 'Fansly',
+    23|    avatarColor: 'bg-blue-100 text-blue-600',
+    24|  },
+    25|  {
+    26|    id: '2',
+    27|    fanName: 'Sam Rivera',
+    28|    lastMessage: 'Thanks for the reply! Buying the PPV now.',
+    29|    timestamp: '1 hour ago',
+    30|    unread: false,
+    31|    spend: 89,
+    32|    lifecycle: 'Warm',
+    33|    safety: 'safe',
+    34|    platform: 'OnlyFans',
+    35|    avatarColor: 'bg-green-100 text-green-600',
+    36|  },
+    37|  {
+    38|    id: '3',
+    39|    fanName: 'Taylor Chen',
+    40|    lastMessage: 'Are you available for a live session this weekend?',
+    41|    timestamp: '3 hours ago',
+    42|    unread: true,
+    43|    spend: 520,
+    44|    lifecycle: 'VIP',
+    45|    safety: 'review',
+    46|    platform: 'Fansly',
+    47|    avatarColor: 'bg-purple-100 text-purple-600',
+    48|  },
+    49|];
+    50|
+    51|const messages = [
+    52|  { id: 'm1', sender: 'fan', text: 'Hey! Loved your latest post. Can you make a custom video?', timestamp: '2:45 PM' },
+    53|  { id: 'm2', sender: 'ai', text: 'Hi Alex! I’d love to help with a custom video. My rates start at $50 for a 3‑minute personalized video. What did you have in mind?', timestamp: '2:46 PM', confidence: 'high', safety: 'passed', mode: 'Draft Only' },
+    54|  { id: 'm3', sender: 'fan', text: 'Something intimate, maybe 5 minutes? I can pay $80.', timestamp: '2:47 PM' },
+    55|  { id: 'm4', sender: 'ai', text: 'That works! For a 5‑minute intimate video, my rate is $100. I can deliver within 24 hours. Would you like to proceed?', timestamp: '2:48 PM', confidence: 'medium', safety: 'needs‑review', mode: 'Draft Only' },
+    56|];
+    57|
+    58|const fanDetails = {
+    59|  name: 'Alex Johnson',
+    60|  platform: 'Fansly',
+    61|  joinDate: 'Mar 12, 2025',
+    62|  totalSpend: 245,
+    63|  lifetimeValue: 520,
+    64|  lifecycleStage: 'High‑Intent',
+    65|  interests: ['Cosplay', 'Gaming', 'Intimate Q&A'],
+    66|  memoryNotes: 'Prefers longer videos. Has bought 2 PPVs before.',
+    67|  lastPpvOffered: 'Cosplay Behind‑the‑Scenes ($30)',
+    68|  suggestedPpv: 'Gaming Livestream Highlights ($25)',
+    69|  aiMode: 'Draft Only',
+    70|  aiTrust: 'High',
+    71|  safetyStatus: 'Clean',
+    72|  auditStatus: 'No flags',
+    73|};
+    74|
+    75|type MobileTab = 'chats' | 'thread' | 'fan' | 'ppv';
+    76|type AiMode = 'Draft Only' | 'Auto Low Risk' | 'Sandbox';
+    77|
+    78|export default function InboxPage() {
+    79|  const [selectedConversationId, setSelectedConversationId] = useState('1');
+    80|  const [mobileTab, setMobileTab] = useState<MobileTab>('chats');
+    81|  const [aiMode, setAiMode] = useState<AiMode>('Draft Only');
+    82|  const [conversationsEmpty] = useState(false); // simulate non-empty for now
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+    83|
+    84|  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+    85|
+    86|  // If empty, show onboarding
+    87|  if (conversationsEmpty) {
+    88|    return (
+    89|      <div className="h-screen bg-background flex items-center justify-center p-8">
+    90|        <div className="max-w-md text-center">
+    91|          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+    92|            <MessageSquare className="h-8 w-8 text-primary" />
+    93|          </div>
+    94|          <h1 className="text-2xl font-semibold mb-2">No conversations yet.</h1>
+    95|          <p className="text-muted-text mb-8">
+    96|            Send a test message in Sandbox to see how your AI drafts replies and suggests PPVs.
+    97|          </p>
+    98|          <button className="rounded-lg bg-primary px-6 py-3 text-white font-medium">
+    99|            Go to Sandbox
+   100|          </button>
+   101|        </div>
+   102|      </div>
+   103|    );
+   104|  }
+   105|
+   106|  // Desktop layout
+   107|  return (
+   108|    <div className="h-screen bg-background text-foreground font-sans">
+   109|      {/* Header */}
+   110|      <header className="flex h-14 items-center justify-between border-b border-border px-6">
+   111|        <div className="flex items-center gap-4">
+   112|          <div className="flex items-center gap-2">
+   113|            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+   114|              <MessageSquare className="h-5 w-5 text-surface" />
+   115|            </div>
+   116|            <h1 className="text-xl font-semibold">Creator Inbox</h1>
+   117|          </div>
+   118|          <div className="hidden md:flex items-center gap-2 rounded-lg bg-elevated-surface px-3 py-1.5 text-sm">
+   119|            <Zap className="h-4 w-4 text-warning" />
+   120|            <span>AI Assistant: Active</span>
+   121|          </div>
+   122|        </div>
+   123|        <div className="flex items-center gap-4">
+   124|          <div className="hidden md:flex items-center gap-2 rounded-lg border border-border px-3 py-1.5">
+   125|            <Shield className="h-4 w-4 text-success" />
+   126|            <span className="text-sm">Safety: All Clear</span>
+   127|          </div>
+   128|          <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-elevated-surface">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="h-9 w-9 rounded-full border border-border flex items-center justify-center hover:bg-elevated-surface"
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+   129|            Sandbox Mode
+   130|          </button>
+   131|          <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-surface hover:bg-primary/90">
+   132|            New Message
+   133|          </button>
+   134|        </div>
+   135|      </header>
+   136|
+   137|      {/* Main content */}
+   138|      <div className="flex h-[calc(100vh-3.5rem)]">
+   139|        {/* Desktop three columns */}
+   140|        <div className="hidden lg:flex flex-1 overflow-hidden">
+   141|          {/* Left: Conversation list */}
+   142|          <div className="w-80 border-r border-border bg-surface overflow-y-auto">
+   143|            <div className="sticky top-0 bg-surface border-b border-border p-4">
+   144|              <div className="relative">
+   145|                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-text" />
+   146|                <input
+   147|                  type="text"
+   148|                  placeholder="Search conversations..."
+   149|                  className="w-full rounded-lg border border-border bg-elevated-surface py-2 pl-10 pr-4 text-sm placeholder:text-muted-text focus:outline-none focus:ring-2 focus:ring-primary/20"
+   150|                />
+   151|              </div>
+   152|              <div className="mt-3 flex gap-2">
+   153|                <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-elevated-surface">
+   154|                  All
+   155|                </button>
+   156|                <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-elevated-surface">
+   157|                  Unread
+   158|                </button>
+   159|                <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-elevated-surface">
+   160|                  VIP
+   161|                </button>
+   162|                <button className="ml-auto text-muted-text hover:text-foreground">
+   163|                  <Filter className="h-4 w-4" />
+   164|                </button>
+   165|              </div>
+   166|            </div>
+   167|            <div className="p-2">
+   168|              {conversations.map(conv => (
+   169|                <div
+   170|                  key={conv.id}
+   171|                  className={cn(
+   172|                    'flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-elevated-surface',
+   173|                    selectedConversationId === conv.id && 'bg-elevated-surface border border-border'
+   174|                  )}
+   175|                  onClick={() => setSelectedConversationId(conv.id)}
+   176|                >
+   177|                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', conv.avatarColor)}>
+   178|                    {conv.fanName.charAt(0)}
+   179|                  </div>
+   180|                  <div className="flex-1 min-w-0">
+   181|                    <div className="flex items-center justify-between">
+   182|                      <h3 className="font-medium truncate">{conv.fanName}</h3>
+   183|                      <span className="text-xs text-muted-text">{conv.timestamp}</span>
+   184|                    </div>
+   185|                    <p className="mt-1 truncate text-sm text-muted-text">{conv.lastMessage}</p>
+   186|                    <div className="mt-2 flex flex-wrap gap-1">
+   187|                      {conv.unread && (
+   188|                        <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-surface">New</span>
+   189|                      )}
+   190|                      <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+   191|                        ${conv.spend}
+   192|                      </span>
+   193|                      <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium">
+   194|                        {conv.lifecycle}
+   195|                      </span>
+   196|                      {conv.safety === 'review' && (
+   197|                        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+   198|                          Review
+   199|                        </span>
+   200|                      )}
+   201|                    </div>
+   202|                  </div>
+   203|                </div>
+   204|              ))}
+   205|            </div>
+   206|          </div>
+   207|
+   208|          {/* Center: Chat thread */}
+   209|          <div className="flex-1 border-r border-border bg-surface overflow-hidden flex flex-col">
+   210|            {/* Chat header */}
+   211|            <div className="border-b border-border p-4">
+   212|              <div className="flex items-center justify-between">
+   213|                <div className="flex items-center gap-3">
+   214|                  <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', selectedConversation?.avatarColor)}>
+   215|                    {selectedConversation?.fanName.charAt(0)}
+   216|                  </div>
+   217|                  <div>
+   218|                    <h2 className="font-semibold">{selectedConversation?.fanName}</h2>
+   219|                    <div className="flex items-center gap-2 text-sm text-muted-text">
+   220|                      <span>{selectedConversation?.platform}</span>
+   221|                      <span>•</span>
+   222|                      <span>Spent ${selectedConversation?.spend}</span>
+   223|                      <span>•</span>
+   224|                      <span className="flex items-center gap-1">
+   225|                        <Clock className="h-3 w-3" />
+   226|                        {selectedConversation?.timestamp}
+   227|                      </span>
+   228|                    </div>
+   229|                  </div>
+   230|                </div>
+   231|                <button className="rounded-lg border border-border p-2 hover:bg-elevated-surface">
+   232|                  <MoreVertical className="h-5 w-5" />
+   233|                </button>
+   234|              </div>
+   235|            </div>
+   236|
+   237|            {/* Messages */}
+   238|            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+   239|              {messages.map(msg => (
+   240|                <div key={msg.id} className={cn('flex', msg.sender === 'fan' ? 'justify-start' : 'justify-end')}>
+   241|                  <div className={cn('max-w-[80%] rounded-2xl p-4', msg.sender === 'fan' ? 'bg-elevated-surface' : 'bg-primary text-surface')}>
+   242|                    <div className="flex items-center justify-between mb-2">
+   243|                      <span className="text-xs font-medium">{msg.sender === 'fan' ? selectedConversation?.fanName : 'AI Draft'}</span>
+   244|                      <span className="text-xs opacity-80">{msg.timestamp}</span>
+   245|                    </div>
+   246|                    <p className="text-sm">{msg.text}</p>
+   247|                    {msg.sender === 'ai' && (
+   248|                      <div className="mt-3 pt-3 border-t border-white/20 space-y-2">
+   249|                        <div className="flex items-center gap-3 text-xs">
+   250|                          <span className="font-medium">Mode:</span>
+   251|                          <span className="rounded-full bg-white/20 px-2 py-0.5">{msg.mode}</span>
+   252|                          <span className="font-medium">Confidence:</span>
+   253|                          <span className={cn('rounded-full px-2 py-0.5', msg.confidence === 'high' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning')}>
+   254|                            {msg.confidence}
+   255|                          </span>
+   256|                          <span className="font-medium">Safety:</span>
+   257|                          <span className={cn('rounded-full px-2 py-0.5', msg.safety === 'passed' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning')}>
+   258|                            {msg.safety}
+   259|                          </span>
+   260|                        </div>
+   261|                        <p className="text-xs opacity-90">Suggests a custom video upsell based on fan’s previous purchases.</p>
+   262|                      </div>
+   263|                    )}
+   264|                  </div>
+   265|                </div>
+   266|              ))}
+   267|            </div>
+   268|
+   269|            {/* AI composer & actions */}
+   270|            <div className="border-t border-border p-4 bg-elevated-surface">
+   271|              <div className="mb-4">
+   272|                <div className="flex items-center gap-4">
+   273|                  <span className="text-sm font-medium">AI Mode</span>
+   274|                  <div className="flex rounded-lg border border-border overflow-hidden">
+   275|                    {(['Draft Only', 'Auto Low Risk', 'Sandbox'] as const).map(mode => (
+   276|                      <button
+   277|                        key={mode}
+   278|                        className={cn('px-4 py-2 text-sm font-medium', aiMode === mode ? 'bg-primary text-surface' : 'hover:bg-surface')}
+   279|                        onClick={() => setAiMode(mode)}
+   280|                      >
+   281|                        {mode}
+   282|                      </button>
+   283|                    ))}
+   284|                  </div>
+   285|                </div>
+   286|              </div>
+   287|              <div className="flex gap-3">
+   288|                <div className="flex-1 rounded-lg border border-border bg-surface p-3">
+   289|                  <p className="text-sm">Hi Alex! I’d love to help with a custom video. My rates start at $50 for a 3‑minute personalized video. What did you have in mind?</p>
+   290|                  <div className="mt-3 flex items-center gap -2 text-xs text-muted-text">
+   291|                    <Target className="h-3 w-3" />
+   292|                    <span>Confidence: High • Safety: Passed</span>
+   293|                  </div>
+   294|                </div>
+   295|                <div className="flex flex-col gap-2">
+   296|                  <button className="flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-3 text-sm font-medium text-surface hover:bg-success/90">
+   297|                    <Check className="h-4 w-4" />
+   298|                    Approve
+   299|                  </button>
+   300|                  <button className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium hover:bg-elevated-surface">
+   301|                    <Edit className="h-4 w-4" />
+   302|                    Edit
+   303|                  </button>
+   304|                  <button className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium hover:bg-elevated-surface">
+   305|                    <X className="h-4 w-4" />
+   306|                    Reject
+   307|                  </button>
+   308|                  <button className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-surface hover:bg-primary/90">
+   309|                    <Send className="h-4 w-4" />
+   310|                    Send
+   311|                  </button>
+   312|                </div>
+   313|              </div>
+   314|              {/* PPV suggestion */}
+   315|              <div className="mt-4 p-4 border border-success/20 rounded-lg bg-success/5">
+   316|                <div className="flex items-center justify-between">
+   317|                  <div className="flex items-center gap-3">
+   318|                    <Gift className="h-5 w-5 text-success" />
+   319|                    <div>
+   320|                      <h4 className="font-medium">Suggested PPV</h4>
+   321|                      <p className="text-sm text-muted-text">“Cosplay Behind‑the‑Scenes” — $30</p>
+   322|                    </div>
+   323|                  </div>
+   324|                  <div className="flex gap-2">
+   325|                    <button className="rounded-lg border border-success px-3 py-1.5 text-sm font-medium text-success hover:bg-success/10">
+   326|                      Attach
+   327|                    </button>
+   328|                    <button className="rounded-lg bg-success px-3 py-1.5 text-sm font-medium text-surface hover:bg-success/90">
+   329|                      Offer Now
+   330|                    </button>
+   331|                  </div>
+   332|                </div>
+   333|              </div>
+   334|            </div>
+   335|          </div>
+   336|
+   337|          {/* Right: Fan inspector */}
+   338|          <div className="w-96 border-l border-border bg-surface overflow-y-auto p-6">
+   339|            <div className="mb-8">
+   340|              <div className="flex items-center gap-3">
+   341|                <div className={cn('h-12 w-12 rounded-lg flex items-center justify-center text-lg font-semibold', selectedConversation?.avatarColor)}>
+   342|                  {selectedConversation?.fanName.charAt(0)}
+   343|                </div>
+   344|                <div>
+   345|                  <h2 className="text-xl font-semibold">{selectedConversation?.fanName}</h2>
+   346|                  <p className="text-sm text-muted-text">{selectedConversation?.platform} • Joined {fanDetails.joinDate}</p>
+   347|                </div>
+   348|              </div>
+   349|            </div>
+   350|
+   351|            <div className="space-y-6">
+   352|              {/* Spend */}
+   353|              <section>
+   354|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   355|                  <DollarSign className="h-4 w-4" />
+   356|                  Spend & Value
+   357|                </h3>
+   358|                <div className="grid grid-cols-2 gap-4">
+   359|                  <div className="rounded-lg border border-border p-4">
+   360|                    <p className="text-sm text-muted-text">Total Spent</p>
+   361|                    <p className="text-2xl font-bold">${fanDetails.totalSpend}</p>
+   362|                  </div>
+   363|                  <div className="rounded-lg border border-border p-4">
+   364|                    <p className="text-sm text-muted-text">Lifetime Value</p>
+   365|                    <p className="text-2xl font-bold">${fanDetails.lifetimeValue}</p>
+   366|                  </div>
+   367|                </div>
+   368|              </section>
+   369|
+   370|              {/* Lifecycle */}
+   371|              <section>
+   372|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   373|                  <Target className="h-4 w-4" />
+   374|                  Lifecycle
+   375|                </h3>
+   376|                <div className="rounded-lg border border-border p-4">
+   377|                  <div className="flex items-center justify-between">
+   378|                    <span className="font-medium">{fanDetails.lifecycleStage}</span>
+   379|                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">High‑Intent</span>
+   380|                  </div>
+   381|                  <div className="mt-4 h-2 rounded-full bg-border overflow-hidden">
+   382|                    <div className="h-full w-3/4 bg-primary"></div>
+   383|                  </div>
+   384|                </div>
+   385|              </section>
+   386|
+   387|              {/* Interests */}
+   388|              <section>
+   389|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   390|                  <Heart className="h-4 w-4" />
+   391|                  Interests
+   392|                </h3>
+   393|                <div className="flex flex-wrap gap-2">
+   394|                  {fanDetails.interests.map(int => (
+   395|                    <span key={int} className="rounded-full border border-border px-3 py-1.5 text-sm">
+   396|                      {int}
+   397|                    </span>
+   398|                  ))}
+   399|                </div>
+   400|              </section>
+   401|
+   402|              {/* Memory notes */}
+   403|              <section>
+   404|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   405|                  <Calendar className="h-4 w-4" />
+   406|                  Memory Notes
+   407|                </h3>
+   408|                <div className="rounded-lg border border-border bg-elevated-surface p-4">
+   409|                  <p className="text-sm">{fanDetails.memoryNotes}</p>
+   410|                </div>
+   411|              </section>
+   412|
+   413|              {/* PPV */}
+   414|              <section>
+   415|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   416|                  <Gift className="h-4 w-4" />
+   417|                  PPV History
+   418|                </h3>
+   419|                <div className="space-y-3">
+   420|                  <div className="rounded-lg border border-border p-4">
+   421|                    <p className="text-sm text-muted-text">Last Offered</p>
+   422|                    <p className="font-medium">{fanDetails.lastPpvOffered}</p>
+   423|                  </div>
+   424|                  <div className="rounded-lg border border-success/20 bg-success/5 p-4">
+   425|                    <p className="text-sm text-muted-text">Suggested PPV</p>
+   426|                    <p className="font-medium">{fanDetails.suggestedPpv}</p>
+   427|                  </div>
+   428|                </div>
+   429|              </section>
+   430|
+   431|              {/* AI Trust */}
+   432|              <section>
+   433|                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-text">
+   434|                  <Shield className="h-4 w-4" />
+   435|                  AI Trust & Safety
+   436|                </h3>
+   437|                <div className="space-y-3">
+   438|                  <div className="flex items-center justify-between">
+   439|                    <span className="text-sm">AI Mode</span>
+   440|                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{fanDetails.aiMode}</span>
+   441|                  </div>
+   442|                  <div className="flex items-center justify-between">
+   443|                    <span className="text-sm">Trust Level</span>
+   444|                    <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">High</span>
+   445|                  </div>
+   446|                  <div className="flex items-center justify-between">
+   447|                    <span className="text-sm">Safety Status</span>
+   448|                    <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">Clean</span>
+   449|                  </div>
+   450|                  <div className="flex items-center justify-between">
+   451|                    <span className="text-sm">Audit Status</span>
+   452|                    <span className="rounded-full bg-border px-3 py-1 text-xs font-medium">No flags</span>
+   453|                  </div>
+   454|                </div>
+   455|              </section>
+   456|            </div>
+   457|          </div>
+   458|        </div>
+   459|
+   460|        {/* Mobile layout */}
+   461|        <div className="flex-1 lg:hidden flex flex-col overflow-hidden">
+   462|          <div className="border-b border-border">
+   463|            <div className="flex">
+   464|              {(['chats', 'thread', 'fan', 'ppv'] as MobileTab[]).map(tab => (
+   465|                <button
+   466|                  key={tab}
+   467|                  className={cn('flex-1 py-3 text-sm font-medium border-b-2', mobileTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-text')}
+   468|                  onClick={() => setMobileTab(tab)}
+   469|                >
+   470|                  {tab === 'chats' && 'Chats'}
+   471|                  {tab === 'thread' && 'Thread'}
+   472|                  {tab === 'fan' && 'Fan'}
+   473|                  {tab === 'ppv' && 'PPV'}
+   474|                </button>
+   475|              ))}
+   476|            </div>
+   477|          </div>
+   478|
+   479|          <div className="flex-1 overflow-y-auto p-4">
+   480|            {mobileTab === 'chats' && (
+   481|              <div className="space-y-4">
+   482|                {conversations.map(conv => (
+   483|                  <div
+   484|                    key={conv.id}
+   485|                    className="rounded-lg border border-border p-4"
+   486|                    onClick={() => {
+   487|                      setSelectedConversationId(conv.id);
+   488|                      setMobileTab('thread');
+   489|                    }}
+   490|                  >
+   491|                    <div className="flex items-center gap-3">
+   492|                      <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', conv.avatarColor)}>
+   493|                        {conv.fanName.charAt(0)}
+   494|                      </div>
+   495|                      <div className="flex-1">
+   496|                        <div className="flex items-center justify-between">
+   497|                          <h3 className="font-medium">{conv.fanName}</h3>
+   498|                          <span className="text-xs text-muted-text">{conv.timestamp}</span>
+   499|                        </div>
+   500|                        <p className="mt-1 text-sm text-muted-text truncate">{conv.lastMessage}</p>
