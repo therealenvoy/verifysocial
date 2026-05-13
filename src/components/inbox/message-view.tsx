@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Send, ThumbsUp, ThumbsDown, Edit, MoreVertical } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 const messages = [
   { id: 1, sender: 'fan', content: 'Hey! I loved your latest photo set. Do you have any behind-the-scenes content?', time: '2:30 PM' },

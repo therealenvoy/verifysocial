@@ -15,7 +15,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },

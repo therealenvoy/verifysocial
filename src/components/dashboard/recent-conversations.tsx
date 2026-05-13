@@ -1,5 +1,5 @@
 import { MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 const conversations = [
   {

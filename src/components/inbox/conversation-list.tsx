@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquare, CheckCircle, Clock, Star } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 const conversations = [
   { id: 1, fan: 'Alex Johnson', platform: 'Fansly', lastMessage: 'Hey, when will the new content drop?', time: '2 min ago', unread: true, status: 'pending', vip: true },

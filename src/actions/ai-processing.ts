@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/src/db/client";
-import { messages, aiGenerations, policyEvents } from "@/src/db/schema";
+import { db } from "@/db/client";
+import { messages, aiGenerations, policyEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function processFanMessageAction(messageId: string) {

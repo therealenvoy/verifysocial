@@ -4,31 +4,39 @@
 
 @layer base {
   :root {
-    --background: 240.0 11.11% 96.47%;
-    --surface: 0.0 0.0% 100.0%;
-    --elevated-surface: 240.0 33.33% 98.82%;
-    --text: 240.0 3.33% 11.76%;
-    --muted-text: 240.0 2.22% 44.12%;
-    --border: 240.0 10.64% 90.78%;
-    --primary: 211.29 100.0% 50.0%;
-    --success: 135.1 58.57% 49.22%;
-    --warning: 35.06 100.0% 50.0%;
-    --danger: 3.19 100.0% 59.41%;
+    /* Light theme - Linear-inspired with Apple clarity */
+    --background: 210.00 40.00% 98.04%;
+    --surface: 0.00 0.00% 100.00%;
+    --elevated-surface: 210.00 40.00% 96.08%;
+    --text: 222.22 47.37% 11.18%;
+    --text-secondary: 215.29 19.32% 34.51%;
+    --text-tertiary: 215.38 16.32% 46.86%;
+    --border: 214.29 31.82% 91.37%;
+    --primary: 233.79 56.31% 59.61%;  /* #5e6ad2 - Linear indigo */
+    --primary-foreground: 0.00 0.00% 100.00%;
+    --success: 160.12 84.08% 39.41%;  /* #10b981 */
+    --warning: 37.69 92.13% 50.20%;   /* #f59e0b */
+    --danger: 0.00 84.24% 60.20%;     /* #ef4444 */
     --radius: 0.5rem;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .dark {
-    --background: 240.0 10.0% 8.0%;
-    --surface: 240.0 8.0% 12.0%;
-    --elevated-surface: 240.0 6.0% 16.0%;
-    --text: 240.0 10.0% 95.0%;
-    --muted-text: 240.0 10.0% 65.0%;
-    --border: 240.0 10.0% 22.0%;
-    --primary: 211.29 100.0% 60.0%;
-    --success: 135.1 58.57% 55.0%;
-    --warning: 35.06 100.0% 55.0%;
-    --danger: 3.19 100.0% 65.0%;
+    /* Dark theme - Apple darkness with Linear accents */
+    --background: 0.00 0.00% 3.92%;
+    --surface: 0.00 0.00% 10.20%;
+    --elevated-surface: 0.00 0.00% 14.90%;
+    --text: 210.00 40.00% 96.08%;
+    --text-secondary: 215.00 20.22% 65.10%;
+    --text-tertiary: 215.29 19.32% 34.51%;
+    --border: 215.29 25.00% 26.67%;
+    --primary: 240.42 100.00% 71.96%; /* #7170ff - Brighter indigo */
+    --primary-foreground: 0.00 0.00% 100.00%;
+    --success: 158.11 64.37% 51.57%;  /* #34d399 */
+    --warning: 43.26 96.41% 56.27%;   /* #fbbf24 */
+    --danger: 0.00 90.60% 70.78%;     /* #f87171 */
     --radius: 0.5rem;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   }
 
   * {
@@ -38,7 +46,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--text));
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
+    font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "rlig" 1, "calt" 1;

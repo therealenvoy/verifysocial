@@ -5,7 +5,12 @@ import {
   Clock, AlertCircle, Shield, DollarSign, Zap, Target, Heart, Calendar, Star, MoreVertical,
   Settings, ArrowRight, Plus, Sun, Moon, Circle, Bell, ExternalLink, Lock, Eye, EyeOff
 } from 'lucide-react';
-import { cn } from '../../src/lib/utils';
+import { cn } from '@/lib/utils';
+import ConversationItem from '@/components/inbox/conversation-item';
+import ChatHeader from '@/components/inbox/chat-header';
+import MessageBubble from '@/components/inbox/message-bubble';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { Button } from '@/components/ui/button';
 
 // Mock data
 const conversations = [
@@ -176,13 +181,13 @@ export default function InboxPage() {
 
   // Desktop layout
   return (
-    <div className="h-screen bg-background text-foreground font-sans flex flex-col">
+    <div className="h-screen bg-background text-foreground font-sans antialiased flex flex-col">
       {/* Header - Apple Mail style */}
       <header className="flex h-12 items-center justify-between px-6 border-b border-border">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Creator Inbox</h1>
+            <h1 className="text-2xl font-medium tracking-tight">Creator Inbox</h1>
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-text">
             <Zap className="h-3.5 w-3.5 text-warning" />
@@ -231,19 +236,15 @@ export default function InboxPage() {
                 <input
                   type="text"
                   placeholder="Search conversations..."
-                  className="w-full rounded-md border border-border bg-elevated-surface py-2 pl-10 pr-4 text-sm placeholder:text-muted-text focus:outline-none focus:ring-1 focus:ring-primary/30 transition"
+                  className="w-full rounded-md border-0 bg-elevated-surface py-2 pl-10 pr-4 text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-0 transition"
                 />
               </div>
               <div className="mt-3 flex gap-1">
-                <button className="rounded-md px-3 py-1.5 text-xs font-medium bg-primary text-surface">
+                <button className="rounded-md px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground">
                   All
                 </button>
-                <button className="rounded-md px-3 py-1.5 text-xs font-medium border border-border hover:bg-elevated-surface">
-                  Unread
-                </button>
-                <button className="rounded-md px-3 py-1.5 text-xs font-medium border border-border hover:bg-elevated-surface">
-                  VIP
-                </button>
+                <button className="rounded-md px-3 py-1.5 text-xs font-medium bg-transparent hover:bg-elevated-surface text-text-secondary">Unread</button>
+                <button className="rounded-md px-3 py-1.5 text-xs font-medium bg-transparent hover:bg-elevated-surface text-text-secondary">VIP</button>
                 <button className="ml-auto text-muted-text hover:text-foreground">
                   <Filter className="h-4 w-4" />
                 </button>
@@ -251,119 +252,46 @@ export default function InboxPage() {
             </div>
             <div className="p-2">
               {conversations.map(conv => (
-                <div
+                <ConversationItem
                   key={conv.id}
-                  className={cn(
-                    'flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-elevated-surface transition',
-                    selectedConversationId === conv.id && 'bg-elevated-surface'
-                  )}
+                  fanName={conv.fanName}
+                  lastMessage={conv.lastMessage}
+                  timestamp={conv.timestamp}
+                  unread={conv.unread}
+                  spend={conv.spend}
+                  lifecycle={conv.lifecycle}
+                  safety={conv.safety}
+                  platform={conv.platform}
+                  avatarColor={conv.avatarColor}
+                  selected={selectedConversationId === conv.id}
                   onClick={() => setSelectedConversationId(conv.id)}
-                >
-                  <div className="relative">
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-md', conv.avatarColor)}>
-                      {conv.fanName.charAt(0)}
-                    </div>
-                    {conv.unread && (
-                      <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary border border-surface" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium truncate">{conv.fanName}</h3>
-                      <span className="text-xs text-muted-text">{conv.timestamp}</span>
-                    </div>
-                    <p className="mt-0.5 truncate text-sm text-muted-text">{conv.lastMessage}</p>
-                    <div className="mt-2 flex items-center gap-2 text-xs">
-                      <span className="text-foreground font-medium">${conv.spend}</span>
-                      <div className="h-1 w-1 rounded-full bg-border" />
-                      <span className="text-muted-text">{conv.lifecycle}</span>
-                      {conv.safety === 'review' && (
-                        <>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="text-warning flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            Review
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                />
               ))}
             </div>
           </div>
 
           {/* Center: Chat thread */}
           <div className="flex-1 border-r border-border bg-surface overflow-hidden flex flex-col">
-            {/* Chat header */}
-            <div className="border-b border-border p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn('h-9 w-9 rounded-md flex items-center justify-center', selectedConversation?.avatarColor)}>
-                    {selectedConversation?.fanName.charAt(0)}
-                  </div>
-                  <div>
-                    <h2 className="font-semibold">{selectedConversation?.fanName}</h2>
-                    <div className="flex items-center gap-2 text-sm text-muted-text">
-                      <span>{selectedConversation?.platform}</span>
-                      <div className="h-1 w-1 rounded-full bg-border" />
-                      <span>Spent ${selectedConversation?.spend}</span>
-                      <div className="h-1 w-1 rounded-full bg-border" />
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {selectedConversation?.timestamp}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button className="rounded-md p-2 border border-border hover:bg-elevated-surface">
-                  <MoreVertical className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+            <ChatHeader
+              fanName={selectedConversation?.fanName || ''}
+              platform={selectedConversation?.platform || ''}
+              spend={selectedConversation?.spend || 0}
+              timestamp={selectedConversation?.timestamp || ''}
+              avatarColor={selectedConversation?.avatarColor || ''}
+            />
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.map(msg => (
-                <div key={msg.id} className={cn('flex', msg.sender === 'fan' ? 'justify-start' : 'justify-end')}>
-                  <div
-                    className={cn(
-                      'max-w-[80%] rounded-xl p-4',
-                      msg.sender === 'fan'
-                        ? 'bg-elevated-surface border border-border'
-                        : 'bg-surface border border-border shadow-sm'
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium">
-                        {msg.sender === 'fan' ? selectedConversation?.fanName : 'AI Draft'}
-                      </span>
-                      <span className="text-xs text-muted-text">{msg.timestamp}</span>
-                    </div>
-                    <p className="text-sm">{msg.text}</p>
-                    {msg.sender === 'ai' && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <div className="flex items-center flex-wrap gap-2 text-xs text-muted-text">
-                          <span className="font-medium">Mode:</span>
-                          <span>{msg.mode}</span>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="font-medium">Confidence:</span>
-                          <span className={cn('font-medium', msg.confidence === 'high' ? 'text-success' : 'text-warning')}>
-                            {msg.confidence}
-                          </span>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="font-medium">Safety:</span>
-                          <span className={cn('font-medium', msg.safety === 'passed' ? 'text-success' : 'text-warning')}>
-                            {msg.safety}
-                          </span>
-                          <div className="h-1 w-1 rounded-full bg-border" />
-                          <span className="font-medium">Reason:</span>
-                          <span>Upsell based on past purchases</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <MessageBubble
+                  key={msg.id}
+                  sender={msg.sender}
+                  text={msg.text}
+                  timestamp={msg.timestamp}
+                  confidence={msg.confidence}
+                  safety={msg.safety}
+                  mode={msg.mode}
+                />
               ))}
             </div>
 

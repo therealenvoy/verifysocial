@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/src/db/client";
-import { platformEvents } from "@/src/db/schema";
-import { hashPayload } from "@/src/lib/encryption";
+import { db } from "@/db/client";
+import { platformEvents } from "@/db/schema";
+import { hashPayload } from "@/lib/encryption";
 
 export async function POST(request: NextRequest) {
   try {
