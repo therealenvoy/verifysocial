@@ -60,7 +60,7 @@ jobs:
       
       - name: Deploy to Railway
         run: |
-          railway link --project a29ae165-9d20-4621-9207-483e2c12c4cb
+          railway link --project 5541c843-c7cc-4e12-b695-af540a2818d9
           railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
