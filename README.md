@@ -1,6 +1,6 @@
-# Fansly AI CRM
+# VerifySocial
 
-AI-powered CRM for Fansly creators. Automates conversations, builds relationships, and sells PPVs.
+Enterprise‑grade safety & compliance platform for OnlyFans, Fansly, and adult content creators. AI‑powered protection against risks.
 
 ## 🚀 Features
 

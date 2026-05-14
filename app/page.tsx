@@ -10,7 +10,7 @@ export default function HomePage() {
             <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <MessageSquare className="h-6 w-6 text-surface" />
             </div>
-            <h1 className="text-2xl font-semibold">Fansly AI CRM</h1>
+            <h1 className="text-2xl font-semibold">VerifySocial</h1>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -32,12 +32,12 @@ export default function HomePage() {
         <main className="py-20">
           <div className="text-center">
             <h2 className="text-5xl font-bold tracking-tight">
-              AI‑Powered CRM for{' '}
-              <span className="text-primary">OnlyFans & Fansly Creators</span>
+              AI Protection Platform for{' '}
+              <span className="text-primary">Adult Content Creators</span>
             </h2>
             <p className="mt-6 text-xl text-muted-text max-w-2xl mx-auto">
-              Automate relationship‑building, scale PPV sales, and grow your creator business with intelligent AI.
-              Designed for agencies and solo creators.
+              Enterprise‑grade safety & compliance for OnlyFans, Fansly, and premium creators.
+              Protect your income, automate risk detection, and scale securely.
             </p>
             <div className="mt-10">
               <Link
@@ -52,31 +52,31 @@ export default function HomePage() {
 
           <div className="mt-32 grid grid-cols-3 gap-8">
             <div className="rounded-xl border border-border p-6">
-              <Zap className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-2">AI‑Driven Conversations</h3>
+              <Shield className="h-12 w-12 text-primary mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Real‑Time Verification</h3>
               <p className="text-muted-text">
-                Automated responses that feel human, personalized for each fan.
+                AI‑powered identity & intent verification for every incoming message and fan.
               </p>
             </div>
             <div className="rounded-xl border border-border p-6">
-              <Shield className="h-12 w-12 text-success mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Safety First</h3>
+              <Zap className="h-12 w-12 text-success mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Automated Protection</h3>
               <p className="text-muted-text">
-                Built‑in content moderation and audit trails to keep your account secure.
+                Proactive risk detection, content moderation, and compliance guardrails.
               </p>
             </div>
             <div className="rounded-xl border border-border p-6">
               <MessageSquare className="h-12 w-12 text-warning mb-4" />
-              <h3 className="text-xl font-semibold mb-2">PPV Optimization</h3>
+              <h3 className="text-xl font-semibold mb-2">Platform Safety</h3>
               <p className="text-muted-text">
-                Smart suggestions for pay‑per‑view content based on fan interests.
+                Keep your OnlyFans, Fansly, and social media accounts secure from bans & flags.
               </p>
             </div>
           </div>
         </main>
 
         <footer className="mt-32 pt-8 border-t border-border text-center text-sm text-muted-text">
-          <p>© 2025 Fansly AI CRM. All rights reserved.</p>
+          <p>© 2025 VerifySocial. All rights reserved.</p>
         </footer>
       </div>
     </div>

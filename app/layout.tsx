@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fansly AI CRM",
-  description: "AI-powered CRM for Fansly creators",
+  title: "VerifySocial | AI Protection for Adult Content Creators",
+  description: "Enterprise-grade safety & compliance platform for OnlyFans, Fansly, and adult content creators. AI-powered protection against risks.",
 };
 
 export default function RootLayout({
