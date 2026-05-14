@@ -1,66 +1,67 @@
-     1|name: Deploy to Railway
-     2|
-     3|on:
-     4|  push:
-     5|    branches: [master]
-     6|  pull_request:
-     7|    branches: [master]
-     8|
-     9|jobs:
-    10|  test-build:
-    11|    runs-on: ubuntu-latest
-    12|    steps:
-    13|      - uses: actions/checkout@v4
-    14|      
-    15|      - name: Setup Node.js
-    16|        uses: actions/setup-node@v4
-    17|        with:
-    18|          node-version: '20'
-    19|          cache: 'npm'
-    20|          
-    21|      - name: Install dependencies
-    22|        run: npm ci
-    23|        
-    24|      - name: TypeScript check
-    25|        run: npx tsc --noEmit --project . || echo "TypeScript errors found (some may be ignored in build)"
-    26|        
-    27|      - name: Build project
-    28|        run: NODE_OPTIONS=--max-old-space-size=4096 npm run build || (echo "Build failed with standard memory, trying low-memory mode" && NODE_OPTIONS=--max-old-space-size=2048 npm run build)
-    29|        
-    30|      - name: Run tests (if any)
-    31|        run: npm test --if-present
-    32|
-    33|  deploy:
-    34|    needs: test-build
-    35|    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    36|    runs-on: ubuntu-latest
-    37|    steps:
-    38|      - uses: actions/checkout@v4
-    39|      
-    40|      - name: Setup Node.js
-    41|        uses: actions/setup-node@v4
-    42|        with:
-    43|          node-version: '20'
-    44|          cache: 'npm'
-    45|      
-    46|      - name: Install Railway CLI
-    47|        run: npm install -g @railway/cli
-    48|      
-    49|      - name: Verify Railway token
-    50|        run: |
-    51|          if [ -n "$RAILWAY_TOKEN" ]; then
-    52|            echo "✓ Railway token is set (length: ${#RAILWAY_TOKEN})"
-    53|          else
-    54|            echo "✗ Railway token is empty"
-    55|            exit 1
-    56|          fi
-    57|        env:
-    58|          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
-    59|      
-    60|      - name: Deploy to Railway
-    61|        run: |
-    62|          railway up --project a29ae165-9d20-4621-9207-483e2c12c4cb \
-    63|                     --environment 535c7496-f90b-4460-9be2-953ac8c57cf8 \
-    64|                     --message "GitHub Actions auto-deploy"
-    65|        env:
-    66|          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: TypeScript check
+        run: npx tsc --noEmit --project . || echo "TypeScript errors found (some may be ignored in build)"
+        
+      - name: Build project
+        run: NODE_OPTIONS=--max-old-space-size=4096 npm run build || (echo "Build failed with standard memory, trying low-memory mode" && NODE_OPTIONS=--max-old-space-size=2048 npm run build)
+        
+      - name: Run tests (if any)
+        run: npm test --if-present
+
+  deploy:
+    needs: test-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Verify Railway token
+        run: |
+          if [ -n "$RAILWAY_TOKEN" ]; then
+            echo "✓ Railway token is set (length: ${#RAILWAY_TOKEN})"
+            echo "Token preview: ${RAILWAY_TOKEN:0:8}..."
+          else
+            echo "✗ Railway token is empty"
+            exit 1
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
+      
+      - name: Deploy to Railway
+        run: |
+          railway up --project a29ae165-9d20-4621-9207-483e2c12c4cb \
+                     --environment 535c7496-f90b-4460-9be2-953ac8c57cf8 \
+                     --message "GitHub Actions auto-deploy"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
