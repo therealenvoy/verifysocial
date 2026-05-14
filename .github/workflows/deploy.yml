@@ -60,8 +60,6 @@ jobs:
       
       - name: Deploy to Railway
         run: |
-          railway up --project a29ae165-9d20-4621-9207-483e2c12c4cb \
-                     --environment 535c7496-f90b-4460-9be2-953ac8c57cf8 \
-                     --message "GitHub Actions auto-deploy"
+          railway deploy --message "GitHub Actions auto-deploy"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
