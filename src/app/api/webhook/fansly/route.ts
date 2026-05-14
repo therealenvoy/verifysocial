@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { platformEvents } from "@/db/schema";
 import { hashPayload } from "@/lib/encryption";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     await db
       .update(platformEvents)
       .set({ status: "processed", processedAt: new Date() })
-      .where(platformEvents.id.eq(event.id));
+      .where(eq(platformEvents.id, event.id));
     
     return NextResponse.json(
       { status: "received", eventId: event.id },
