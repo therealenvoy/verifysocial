@@ -58,6 +58,9 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
       
       - name: Deploy to Railway
-        run: railway up --service 5ad03594-dbb8-4a5f-8386-91bec6db6b3d
+        run: |
+          railway up --project 5541c843-c7cc-4e12-b695-af540a2818d9 \
+                     --environment 535c7496-f90b-4460-9be2-953ac8c57cf8 \
+                     --message "GitHub Actions auto-deploy"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
