@@ -37,10 +37,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy to Railway
-        uses: railwayapp/action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          project: zonal-prosperity
-          environment: production
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Verify Railway token
+        run: |
+          if [ -n "$RAILWAY_TOKEN" ]; then
+            echo "✓ Railway token is set (length: ${#RAILWAY_TOKEN})"
+          else
+            echo "✗ Railway token is empty"
+            exit 1
+          fi
         env:
-          RAILWAYTOKEN: ${{ secrets.RAILWAYTOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
+      
+      - name: Deploy to Railway
+        run: railway up --service 5ad03594-dbb8-4a5f-8386-91bec6db6b3d
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAYTOKEN }}
