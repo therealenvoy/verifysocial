@@ -67,8 +67,7 @@ export interface ConversationDetail {
 export async function getCreatorForClerkUser(
   clerkUserId: string,
 ): Promise<{ id: string; organizationId: string; displayName: string } | null> {
-  const row = await db
-    .select({
+  const row = await db.select({
       id: creators.id,
       organizationId: creators.organizationId,
       displayName: creators.displayName,
@@ -114,8 +113,7 @@ export async function getConversations(
     LIMIT 1
   )`;
 
-  const rows = await db
-    .select({
+  const rows = await db.select({
       id: conversations.id,
       status: conversations.status,
       updatedAt: conversations.updatedAt,
@@ -156,8 +154,7 @@ export async function getConversations(
 export async function getConversationDetail(
   conversationId: string,
 ): Promise<ConversationDetail | null> {
-  const row = await db
-    .select({
+  const row = await db.select({
       id: conversations.id,
       status: conversations.status,
       creatorId: conversations.creatorId,
@@ -199,8 +196,7 @@ export async function getMessages(
   options: { limit?: number } = {},
 ): Promise<MessageItem[]> {
   const limit = options.limit ?? 50;
-  const rows = await db
-    .select({
+  const rows = await db.select({
       id: messages.id,
       role: messages.role,
       content: messages.content,

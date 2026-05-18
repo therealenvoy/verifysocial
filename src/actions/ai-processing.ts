@@ -200,24 +200,23 @@ export async function processFanMessageAction(
     // Emit a downstream event so analytics / Sentry / future consumers
     // can react without coupling to the critical path. Inngest tolerates a
     // missing event key in dev — failures here never block the response.
-    inngest
-      .send({
-        name: "fan-message/processed",
-        data: {
-          conversationId,
-          fanMessageId: fanMsg.id,
-          aiMessageId: aiMsg.id,
-          model: aiResp.model,
-          latencyMs,
-          idempotencyKey,
-        },
-      })
-      .catch((err: unknown) => {
-        logger.warn("ai_processing.inngest_emit_failed", {
-          conversationId,
-          error: err instanceof Error ? err.message : String(err),
-        });
+    const sendResult = inngest.send({
+      name: "fan-message/processed",
+      data: {
+        conversationId,
+        fanMessageId: fanMsg.id,
+        aiMessageId: aiMsg.id,
+        model: aiResp.model,
+        latencyMs,
+        idempotencyKey,
+      },
+    });
+    sendResult.catch((err: unknown) => {
+      logger.warn("ai_processing.inngest_emit_failed", {
+        conversationId,
+        error: err instanceof Error ? err.message : String(err),
       });
+    });
 
     return {
       status: "processed",
