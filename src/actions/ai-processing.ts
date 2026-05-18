@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { aiRouter, type ChatMessage } from "@/lib/ai-router";
 import { logger } from "@/lib/logger";
+import { inngest } from "@/inngest/client";
 
 /**
  * Input contract for the fan-message processing action. The idempotency key
@@ -195,6 +196,28 @@ export async function processFanMessageAction(
       outputTokens: aiResp.tokens.output,
       costMicros: aiResp.costMicros,
     });
+
+    // Emit a downstream event so analytics / Sentry / future consumers
+    // can react without coupling to the critical path. Inngest tolerates a
+    // missing event key in dev — failures here never block the response.
+    inngest
+      .send({
+        name: "fan-message/processed",
+        data: {
+          conversationId,
+          fanMessageId: fanMsg.id,
+          aiMessageId: aiMsg.id,
+          model: aiResp.model,
+          latencyMs,
+          idempotencyKey,
+        },
+      })
+      .catch((err: unknown) => {
+        logger.warn("ai_processing.inngest_emit_failed", {
+          conversationId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
 
     return {
       status: "processed",
