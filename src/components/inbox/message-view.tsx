@@ -106,7 +106,7 @@ export function MessageView() {
         </div>
         <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center space-x-4">
-            <span>💡 AI suggests: "I can send it right now! Check your DMs."</span>
+            <span>AI suggests: &quot;I can send it right now! Check your DMs.&quot;</span>
           </div>
           <div className="flex items-center space-x-4">
             <button className="text-purple-600 hover:text-purple-700">Use suggestion</button>

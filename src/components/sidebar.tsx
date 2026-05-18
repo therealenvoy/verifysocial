@@ -115,7 +115,7 @@ export function Sidebar() {
               </p>
             </div>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </div>
     </div>

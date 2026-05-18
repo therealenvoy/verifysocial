@@ -10,13 +10,6 @@ export async function processFanMessageAction(messageId: string) {
   // 1. Fetch message with conversation
   const message = await db.query.messages.findFirst({
     where: eq(messages.id, messageId),
-    with: {
-      conversation: {
-        with: {
-          fan: true,
-        },
-      },
-    },
   });
   
   if (!message) {
@@ -30,7 +23,7 @@ export async function processFanMessageAction(messageId: string) {
   
   if (hasBlocked) {
     await db.insert(policyEvents).values({
-      creatorId: message.conversation.creatorId,
+      creatorId: message.creatorId,
       severity: "warning",
       eventType: "content_filter_blocked",
       actionTaken: "blocked",
@@ -72,7 +65,7 @@ export async function processFanMessageAction(messageId: string) {
     .insert(messages)
     .values({
       conversationId: message.conversationId,
-      creatorId: message.conversation.creatorId,
+      creatorId: message.creatorId,
       role: "ai_assistant",
       content: aiResponse,
       sendStatus: "draft", // Creator must approve
@@ -100,13 +93,6 @@ export async function sendQueuedMessageAction(messageId: string) {
   
   const message = await db.query.messages.findFirst({
     where: eq(messages.id, messageId),
-    with: {
-      conversation: {
-        with: {
-          creator: true,
-        },
-      },
-    },
   });
   
   if (!message) {

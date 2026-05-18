@@ -193,9 +193,7 @@ export function createConnector(
 
     case 'apifansly':
       if (!credentials) throw new Error('[connector] apifansly requires credentials');
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { ApifanslyConnector } = require('./apifansly-connector');
-      return new ApifanslyConnector(JSON.parse(credentials));
+      throw new Error('[connector] ApifanslyConnector is not implemented yet; use sandbox until the API contract is configured');
 
     default:
       throw new Error(`[connector] Unknown connector type: ${type}`);

@@ -17,7 +17,7 @@ export interface AIResponse {
 export class AIModelRouter {
   private openai: OpenAI;
   private anthropic: Anthropic;
-  private deepseekApiKey: string;
+  private deepseek: OpenAI;
 
   constructor() {
     this.openai = new OpenAI({
@@ -26,7 +26,10 @@ export class AIModelRouter {
     this.anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY || "",
     });
-    this.deepseekApiKey = process.env.DEEPSEEK_API_KEY || "";
+    this.deepseek = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY || "",
+      baseURL: "https://api.deepseek.com",
+    });
   }
 
   async generateResponse(
@@ -58,14 +61,11 @@ export class AIModelRouter {
     temperature: number,
     maxTokens: number
   ): Promise<AIResponse> {
-    const response = await this.openai.chat.completions.create({
+    const response = await this.deepseek.chat.completions.create({
       model: "deepseek-chat",
       messages: [{ role: "user", content: prompt }],
       temperature,
       max_tokens: maxTokens,
-    }, {
-      baseURL: "https://api.deepseek.com",
-      apiKey: this.deepseekApiKey,
     });
 
     const content = response.choices[0]?.message?.content || "";
@@ -97,7 +97,8 @@ export class AIModelRouter {
       messages: [{ role: "user", content: prompt }],
     });
 
-    const content = response.content[0]?.text || "";
+    const textBlock = response.content.find((block) => block.type === "text");
+    const content = textBlock?.text || "";
     const inputTokens = response.usage?.input_tokens || 0;
     const outputTokens = response.usage?.output_tokens || 0;
 

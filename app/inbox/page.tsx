@@ -1,632 +1,878 @@
 'use client';
-import { useState, useEffect } from 'react';
-import {
-  MessageSquare, User, Gift, Search, Filter, ChevronRight, Check, Edit, X, Send,
-  Clock, AlertCircle, Shield, DollarSign, Zap, Target, Heart, Calendar, Star, MoreVertical,
-  Settings, ArrowRight, Plus, Sun, Moon, Circle, Bell, ExternalLink, Lock, Eye, EyeOff
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import ConversationItem from '@/components/inbox/conversation-item';
-import ChatHeader from '@/components/inbox/chat-header';
-import MessageBubble from '@/components/inbox/message-bubble';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { Button } from '@/components/ui/button';
 
-// Mock data
-const conversations = [
+import { useMemo, useState } from 'react';
+import {
+  ArrowUpRight,
+  Bot,
+  Brain,
+  Check,
+  ChevronRight,
+  CircleDollarSign,
+  Command,
+  Eye,
+  Filter,
+  Gift,
+  LockKeyhole,
+  MoreHorizontal,
+  Pause,
+  Radar,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  UserRound,
+  Wand2,
+  X,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type ConversationStatus = 'live' | 'review' | 'safe' | 'blocked';
+
+type Conversation = {
+  id: string;
+  fanName: string;
+  handle: string;
+  platform: string;
+  lastMessage: string;
+  timestamp: string;
+  spend: number;
+  lifetimeValue: number;
+  lifecycle: string;
+  status: ConversationStatus;
+  priority: string;
+  score: number;
+  avatarTone: string;
+};
+
+type AiMode = 'Draft Only' | 'Auto Low Risk' | 'Sandbox';
+
+const conversations: Conversation[] = [
   {
     id: '1',
     fanName: 'Alex Johnson',
-    lastMessage: 'Hey! Loved your latest post. Can you make a custom video?',
-    timestamp: '2 min ago',
-    unread: true,
-    spend: 245,
-    lifecycle: 'High‑Intent',
-    safety: 'safe',
+    handle: '@alexj',
     platform: 'Fansly',
-    avatarColor: 'bg-blue-100 text-blue-600',
+    lastMessage: 'Loved your latest post. Can you make a custom video?',
+    timestamp: '2 min',
+    spend: 245,
+    lifetimeValue: 520,
+    lifecycle: 'High intent',
+    status: 'live',
+    priority: 'Needs approval',
+    score: 92,
+    avatarTone: 'from-sky-400 to-blue-600',
   },
   {
     id: '2',
     fanName: 'Sam Rivera',
-    lastMessage: 'Thanks for the reply! Buying the PPV now.',
-    timestamp: '1 hour ago',
-    unread: false,
-    spend: 89,
-    lifecycle: 'Warm',
-    safety: 'safe',
+    handle: '@samr',
     platform: 'OnlyFans',
-    avatarColor: 'bg-green-100 text-green-600',
+    lastMessage: 'Thanks for the reply. Buying the PPV now.',
+    timestamp: '1h',
+    spend: 89,
+    lifetimeValue: 180,
+    lifecycle: 'Warm',
+    status: 'safe',
+    priority: 'Revenue active',
+    score: 74,
+    avatarTone: 'from-emerald-300 to-teal-600',
   },
   {
     id: '3',
     fanName: 'Taylor Chen',
-    lastMessage: 'Are you available for a live session this weekend?',
-    timestamp: '3 hours ago',
-    unread: true,
-    spend: 520,
-    lifecycle: 'VIP',
-    safety: 'review',
+    handle: '@taylorc',
     platform: 'Fansly',
-    avatarColor: 'bg-purple-100 text-purple-600',
+    lastMessage: 'Are you available for a live session this weekend?',
+    timestamp: '3h',
+    spend: 520,
+    lifetimeValue: 1200,
+    lifecycle: 'VIP',
+    status: 'review',
+    priority: 'Human review',
+    score: 88,
+    avatarTone: 'from-violet-300 to-fuchsia-600',
   },
   {
     id: '4',
     fanName: 'Jordan Lee',
-    lastMessage: 'Your content is amazing!',
-    timestamp: '5 hours ago',
-    unread: false,
-    spend: 0,
-    lifecycle: 'Blocked',
-    safety: 'blocked',
+    handle: '@jordanl',
     platform: 'OnlyFans',
-    avatarColor: 'bg-red-100 text-red-600',
+    lastMessage: 'Your content is amazing.',
+    timestamp: '5h',
+    spend: 0,
+    lifetimeValue: 0,
+    lifecycle: 'Blocked',
+    status: 'blocked',
+    priority: 'Safety hold',
+    score: 18,
+    avatarTone: 'from-rose-300 to-red-700',
   },
 ];
 
-const messages = [
-  { id: 'm1', sender: 'fan', text: 'Hey! Loved your latest post. Can you make a custom video?', timestamp: '2:45 PM' },
-  { id: 'm2', sender: 'ai', text: 'Hi Alex! I’d love to help with a custom video. My rates start at $50 for a 3‑minute personalized video. What did you have in mind?', timestamp: '2:46 PM', confidence: 'high', safety: 'passed', mode: 'Draft Only' },
-  { id: 'm3', sender: 'fan', text: 'Something intimate, maybe 5 minutes? I can pay $80.', timestamp: '2:47 PM' },
-  { id: 'm4', sender: 'ai', text: 'That works! For a 5‑minute intimate video, my rate is $100. I can deliver within 24 hours. Would you like to proceed?', timestamp: '2:48 PM', confidence: 'medium', safety: 'needs‑review', mode: 'Draft Only' },
-];
-
-const getFanDetails = (conversationId: string) => {
-  const base = {
-    name: 'Alex Johnson',
-    platform: 'Fansly',
-    joinDate: 'Mar 12, 2025',
-    totalSpent: 245,
-    lifetimeValue: 520,
-    lifecycleStage: 'High‑Intent',
-    interests: ['Cosplay', 'Gaming', 'Intimate Q&A'],
-    memoryNotes: 'Prefers longer videos. Has bought 2 PPVs before.',
-    lastPpvOffered: 'Cosplay Behind‑the‑Scenes ($30)',
-    suggestedPpv: 'Gaming Livestream Highlights ($25)',
-    aiMode: 'Draft Only',
-    aiTrust: 'High',
-    safetyStatus: 'Clean',
-    auditStatus: 'No flags',
-  };
-
-  if (conversationId === '4') {
-    return {
-      ...base,
-      name: 'Jordan Lee',
-      platform: 'OnlyFans',
-      totalSpent: 0,
-      lifetimeValue: 0,
-      lifecycleStage: 'Blocked',
-      interests: ['Generic'],
-      memoryNotes: 'User blocked for policy violations.',
-      safetyStatus: 'Blocked',
-      auditStatus: 'Major flags',
-    };
-  }
-
-  if (conversationId === '2') {
-    return {
-      ...base,
-      name: 'Sam Rivera',
-      totalSpent: 89,
-      lifetimeValue: 180,
-      lifecycleStage: 'Warm',
-      interests: ['Custom Requests', 'Quick Replies'],
-      safetyStatus: 'Clean',
-    };
-  }
-
-  if (conversationId === '3') {
-    return {
-      ...base,
-      name: 'Taylor Chen',
-      totalSpent: 520,
-      lifetimeValue: 1200,
-      lifecycleStage: 'VIP',
-      interests: ['Live Sessions', 'Premium Content'],
-      safetyStatus: 'Under Review',
-    };
-  }
-
-  return base;
+const fanProfiles = {
+  '1': {
+    joined: 'Mar 12, 2025',
+    trust: 'High',
+    safety: 'Clean',
+    nextBestAction: 'Approve custom-video qualifier',
+    conversion: 78,
+    interests: ['Cosplay', 'Gaming', 'Longer videos'],
+    signals: [
+      { label: 'Buying intent', value: 92, tone: 'bg-sky-400' },
+      { label: 'Relationship warmth', value: 74, tone: 'bg-emerald-400' },
+      { label: 'Upsell readiness', value: 81, tone: 'bg-amber-300' },
+    ],
+    memories: [
+      'Prefers longer personalized videos.',
+      'Responds best to playful, direct replies.',
+      'Bought two PPVs after a question-led offer.',
+    ],
+    offer: 'Gaming Livestream Highlights',
+    offerPrice: 25,
+  },
+  '2': {
+    joined: 'Jan 04, 2025',
+    trust: 'Medium',
+    safety: 'Clean',
+    nextBestAction: 'Confirm purchase and suggest bundle',
+    conversion: 61,
+    interests: ['Quick replies', 'Bundles', 'Behind the scenes'],
+    signals: [
+      { label: 'Buying intent', value: 70, tone: 'bg-sky-400' },
+      { label: 'Relationship warmth', value: 64, tone: 'bg-emerald-400' },
+      { label: 'Upsell readiness', value: 52, tone: 'bg-amber-300' },
+    ],
+    memories: [
+      'Prefers short replies and fast delivery.',
+      'Recently accepted a low-price PPV.',
+      'Usually responds within one hour.',
+    ],
+    offer: 'Behind-the-Scenes Bundle',
+    offerPrice: 19,
+  },
+  '3': {
+    joined: 'Oct 19, 2024',
+    trust: 'High',
+    safety: 'Review',
+    nextBestAction: 'Queue live-session draft for approval',
+    conversion: 84,
+    interests: ['Live sessions', 'Premium content', 'VIP access'],
+    signals: [
+      { label: 'Buying intent', value: 88, tone: 'bg-sky-400' },
+      { label: 'Relationship warmth', value: 86, tone: 'bg-emerald-400' },
+      { label: 'Upsell readiness', value: 77, tone: 'bg-amber-300' },
+    ],
+    memories: [
+      'High-value fan with consistent premium purchases.',
+      'Likes availability windows and concrete options.',
+      'Review suggested live-session language before sending.',
+    ],
+    offer: 'VIP Weekend Session',
+    offerPrice: 75,
+  },
+  '4': {
+    joined: 'May 01, 2025',
+    trust: 'Low',
+    safety: 'Blocked',
+    nextBestAction: 'Keep automation paused',
+    conversion: 8,
+    interests: ['Generic'],
+    signals: [
+      { label: 'Buying intent', value: 12, tone: 'bg-sky-400' },
+      { label: 'Relationship warmth', value: 18, tone: 'bg-emerald-400' },
+      { label: 'Upsell readiness', value: 4, tone: 'bg-amber-300' },
+    ],
+    memories: [
+      'Account is blocked by current safety rules.',
+      'Do not send offers until reviewed.',
+      'Automation must remain disabled.',
+    ],
+    offer: 'No offer available',
+    offerPrice: 0,
+  },
 };
 
-type MobileTab = 'chats' | 'thread' | 'fan' | 'ppv';
-type AiMode = 'Draft Only' | 'Auto Low Risk' | 'Sandbox';
+const thread = [
+  {
+    id: 'm1',
+    sender: 'fan',
+    timestamp: '2:45 PM',
+    text: 'Hey. Loved your latest post. Can you make a custom video?',
+  },
+  {
+    id: 'm2',
+    sender: 'ai',
+    timestamp: '2:46 PM',
+    text: 'Hi Alex, I can help with that. My custom videos start at $50 for 3 minutes. What vibe did you have in mind?',
+    intent: 'Custom request',
+    salesFit: 'High',
+    safety: 'Passed',
+  },
+  {
+    id: 'm3',
+    sender: 'fan',
+    timestamp: '2:47 PM',
+    text: 'Something personal, maybe 5 minutes. I can pay $80.',
+  },
+];
+
+const commandItems = ['Approve draft', 'Attach PPV', 'Pause AI', 'Open memory', 'Human takeover'];
+
+const statusStyles: Record<ConversationStatus, string> = {
+  live: 'border-sky-300/25 bg-sky-300/10 text-sky-200',
+  review: 'border-amber-300/25 bg-amber-300/10 text-amber-200',
+  safe: 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200',
+  blocked: 'border-rose-300/25 bg-rose-300/10 text-rose-200',
+};
 
 export default function InboxPage() {
   const [selectedConversationId, setSelectedConversationId] = useState('1');
-  const [mobileTab, setMobileTab] = useState<MobileTab>('chats');
   const [aiMode, setAiMode] = useState<AiMode>('Draft Only');
-  const [conversationsEmpty] = useState(false); // simulate non-empty for now
-  const [darkMode, setDarkMode] = useState(true);
-  const [isSandbox, setIsSandbox] = useState(true);
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (!newMode) { // newMode false means light theme active
-      document.documentElement.classList.add('light');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.classList.remove('light');
-      localStorage.setItem('theme', 'dark');
-    }
-  };
+  const selectedConversation = useMemo(
+    () => conversations.find((conversation) => conversation.id === selectedConversationId) ?? conversations[0],
+    [selectedConversationId]
+  );
+  const fanDetails = fanProfiles[selectedConversation.id as keyof typeof fanProfiles];
 
-  useEffect(() => {
-    const stored = localStorage.getItem('theme');
-    if (stored === 'light') {
-      setDarkMode(false);
-      document.documentElement.classList.add('light');
-    } else {
-      setDarkMode(true);
-      document.documentElement.classList.remove('light');
-    }
-  }, []);
+  return (
+    <main className="relative h-screen overflow-hidden bg-[#05070d] text-[#f4f7fb]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:44px_44px] opacity-35" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[linear-gradient(180deg,rgba(59,130,246,0.18),transparent)]" />
+      <div className="relative z-10 flex h-full flex-col">
+        <TopBar />
 
-  const toggleSandbox = () => setIsSandbox(!isSandbox);
+        <section className="hidden min-h-0 flex-1 grid-cols-[340px_minmax(520px,1fr)_380px] gap-3 p-3 xl:grid 2xl:grid-cols-[370px_minmax(620px,1fr)_420px]">
+          <PriorityQueue
+            selectedId={selectedConversationId}
+            onSelect={setSelectedConversationId}
+          />
+          <ConversationCanvas
+            aiMode={aiMode}
+            conversation={selectedConversation}
+            fanDetails={fanDetails}
+            onModeChange={setAiMode}
+          />
+          <FanIntelligence
+            conversation={selectedConversation}
+            fanDetails={fanDetails}
+          />
+        </section>
 
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
-  const fanDetails = getFanDetails(selectedConversationId);
+        <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 xl:hidden">
+          <MobileQueue
+            selectedId={selectedConversationId}
+            onSelect={setSelectedConversationId}
+          />
+          <ConversationCanvas
+            aiMode={aiMode}
+            conversation={selectedConversation}
+            fanDetails={fanDetails}
+            onModeChange={setAiMode}
+            compact
+          />
+          <FanIntelligence
+            conversation={selectedConversation}
+            fanDetails={fanDetails}
+            compact
+          />
+        </section>
+      </div>
+    </main>
+  );
+}
 
-  // If empty, show onboarding
-  if (conversationsEmpty) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center p-8">
-        <div className="max-w-md text-center">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <MessageSquare className="h-8 w-8 text-primary" />
+function TopBar() {
+  return (
+    <header className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/10 bg-white/[0.035] px-4 backdrop-blur-2xl md:px-6">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
+          <Sparkles className="h-5 w-5 text-sky-200" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-[15px] font-semibold tracking-tight text-white">Liquid Glass Command Center</p>
+            <span className="hidden rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-sky-100 md:inline">
+              Sandbox
+            </span>
           </div>
-          <h1 className="text-2xl font-semibold mb-2">No conversations yet.</h1>
-          <p className="text-muted-text mb-8">
-            Send a test message in Sandbox to see how your AI drafts replies and suggests PPVs.
-          </p>
-          <button className="rounded-lg bg-primary px-6 py-3 text-white font-medium hover:bg-primary/90 transition">
-            Go to Sandbox
-          </button>
+          <p className="truncate text-xs text-slate-400">AI inbox, memory, offers, and safety controls</p>
         </div>
       </div>
-    );
-  }
 
-  // Desktop layout - Linear Dark Theme
+      <div className="hidden min-w-[320px] max-w-[520px] flex-1 items-center px-8 lg:flex">
+        <button className="flex h-11 w-full items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 text-left text-sm text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl transition hover:border-white/18 hover:bg-white/[0.055]">
+          <span className="flex items-center gap-2">
+            <Command className="h-4 w-4 text-slate-500" />
+            Search actions, fans, PPVs
+          </span>
+          <span className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-500">⌘K</span>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <StatusChip icon={Bot} label="AI Online" tone="sky" />
+        <StatusChip icon={ShieldCheck} label="Safety Clean" tone="emerald" />
+        <button
+          className="hidden h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055] text-slate-200 backdrop-blur-xl transition hover:bg-white/10 md:flex"
+          aria-label="Open review mode"
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function PriorityQueue({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
   return (
-    <div className="h-screen bg-background text-foreground font-sans antialiased flex flex-col">
-      {/* Header - Linear precision */}
-      <header className="flex h-12 items-center justify-between px-6 border-b border-subtle bg-surface-panel/50 backdrop-blur-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-medium tracking-tight">Creator Inbox</h1>
+    <aside className="min-h-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-[0_20px_80px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl">
+      <div className="border-b border-white/10 p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Priority Queue</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">Revenue cockpit</h2>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-xs text-text-tertiary font-mono">
-            <Zap className="h-3 w-3 text-primary" />
-            <span>AI Assistant</span>
-            <div className="h-0.5 w-0.5 rounded-full bg-border-medium mx-1" />
-            <span className="text-success">Safety: All Clear</span>
+          <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-slate-300 transition hover:bg-white/10">
+            <Filter className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <MetricPill label="Queue" value="14" />
+          <MetricPill label="Review" value="3" tone="amber" />
+          <MetricPill label="Today" value="$326" tone="emerald" />
+        </div>
+
+        <label className="mt-4 flex h-11 items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 text-sm text-slate-400">
+          <Search className="h-4 w-4 text-slate-500" />
+          <input
+            className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-slate-500"
+            placeholder="Find fan or signal"
+          />
+        </label>
+      </div>
+
+      <div className="h-full min-h-0 overflow-y-auto p-2">
+        {conversations.map((conversation) => (
+          <button
+            key={conversation.id}
+            onClick={() => onSelect(conversation.id)}
+            className={cn(
+              'group mb-2 w-full rounded-[22px] border p-3 text-left transition duration-200',
+              selectedId === conversation.id
+                ? 'border-sky-300/35 bg-sky-300/[0.10] shadow-[0_0_0_1px_rgba(125,211,252,0.10),0_18px_44px_rgba(14,165,233,0.10)]'
+                : 'border-white/0 bg-white/[0.025] hover:border-white/10 hover:bg-white/[0.055]'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <Avatar conversation={conversation} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-semibold text-white">{conversation.fanName}</p>
+                  <span className="shrink-0 text-xs text-slate-500">{conversation.timestamp}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <span>{conversation.platform}</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-600" />
+                  <span>${conversation.spend}</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-600" />
+                  <span>{conversation.lifecycle}</span>
+                </div>
+                <p className="mt-3 line-clamp-2 text-[13px] leading-5 text-slate-300">{conversation.lastMessage}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className={cn('rounded-full border px-2 py-1 text-[11px]', statusStyles[conversation.status])}>
+                    {conversation.priority}
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                    <Radar className="h-3 w-3 text-sky-300" />
+                    {conversation.score}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function MobileQueue({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-[26px] border border-white/10 bg-white/[0.045] p-3 backdrop-blur-2xl">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Priority Queue</p>
+          <h2 className="text-lg font-semibold text-white">Active fans</h2>
+        </div>
+        <StatusChip icon={Bot} label="Online" tone="sky" />
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {conversations.map((conversation) => (
+          <button
+            key={conversation.id}
+            onClick={() => onSelect(conversation.id)}
+            className={cn(
+              'min-w-[220px] rounded-2xl border p-3 text-left',
+              selectedId === conversation.id ? 'border-sky-300/35 bg-sky-300/10' : 'border-white/10 bg-black/20'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Avatar conversation={conversation} size="sm" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{conversation.fanName}</p>
+                <p className="text-xs text-slate-500">${conversation.spend} spent</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConversationCanvas({
+  conversation,
+  fanDetails,
+  aiMode,
+  onModeChange,
+  compact = false,
+}: {
+  conversation: Conversation;
+  fanDetails: (typeof fanProfiles)[keyof typeof fanProfiles];
+  aiMode: AiMode;
+  onModeChange: (mode: AiMode) => void;
+  compact?: boolean;
+}) {
+  return (
+    <section className="min-h-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-[0_20px_80px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl">
+      <div className="flex items-center justify-between border-b border-white/10 p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar conversation={conversation} />
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold tracking-tight text-white">{conversation.fanName}</h1>
+            <p className="truncate text-xs text-slate-400">
+              {conversation.platform} · {conversation.handle} · LTV ${conversation.lifetimeValue}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-2 text-xs">
-            <button
-              onClick={toggleSandbox}
-              className={cn(
-                "px-2.5 py-1 rounded text-xs font-medium transition",
-                isSandbox 
-                  ? "bg-warning/10 text-warning border border-warning/20" 
-                  : "border border-medium hover:bg-surface-elevated text-text-tertiary"
-              )}
-            >
-              {isSandbox ? 'Sandbox Active' : 'Live Mode'}
-            </button>
-          </div>
-          <button
-            onClick={toggleDarkMode}
-            className="h-7 w-7 rounded border border-medium flex items-center justify-center hover:bg-surface-elevated transition text-text-tertiary hover:text-foreground"
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          <button className="hidden rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300 transition hover:bg-white/10 md:block">
+            Human takeover
           </button>
-          <button className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary-hover transition">
-            New Message
+          <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-slate-300 transition hover:bg-white/10">
+            <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Desktop three columns */}
-        <div className="hidden lg:flex flex-1 overflow-hidden">
-          
-          {/* Left: Conversation list - Linear precision */}
-          <div className="w-80 border-r border-subtle bg-surface-panel overflow-y-auto">
-            <div className="sticky top-0 bg-surface-panel border-b border-subtle p-3">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
-                <input
-                  type="text"
-                  placeholder="Search conversations..."
-                  className="w-full rounded border border-medium bg-surface-elevated py-1.5 pl-9 pr-3 text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition font-sans"
-                />
-              </div>
-              <div className="mt-2.5 flex gap-1">
-                <button className="rounded px-2.5 py-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition">
-                  All
-                </button>
-                <button className="rounded px-2.5 py-1 text-xs font-medium border border-medium hover:bg-surface-elevated text-text-secondary transition">
-                  Unread
-                </button>
-                <button className="rounded px-2.5 py-1 text-xs font-medium border border-medium hover:bg-surface-elevated text-text-secondary transition">
-                  VIP
-                </button>
-                <button className="ml-auto text-text-tertiary hover:text-foreground hover:bg-surface-elevated rounded p-1 transition">
-                  <Filter className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-            <div className="p-1">
-              {conversations.map(conv => (
-                <ConversationItem
-                  key={conv.id}
-                  id={conv.id}
-                  fanName={conv.fanName}
-                  lastMessage={conv.lastMessage}
-                  timestamp={conv.timestamp}
-                  unread={conv.unread}
-                  spend={conv.spend}
-                  lifecycle={conv.lifecycle}
-                  safety={conv.safety}
-                  platform={conv.platform}
-                  avatarColor={conv.avatarColor}
-                  selected={selectedConversationId === conv.id}
-                  onClick={() => setSelectedConversationId(conv.id)}
-                />
-              ))}
-            </div>
+      <div className={cn('grid min-h-0', compact ? 'grid-cols-1' : 'h-[calc(100%-73px)] grid-rows-[1fr_auto]')}>
+        <div className="min-h-0 overflow-y-auto p-4 md:p-6">
+          <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <InsightTile icon={Target} label="Next action" value={fanDetails.nextBestAction} />
+            <InsightTile icon={CircleDollarSign} label="Offer fit" value={`${fanDetails.conversion}% conversion`} tone="emerald" />
+            <InsightTile icon={ShieldCheck} label="Trust" value={`${fanDetails.trust} · ${fanDetails.safety}`} tone="sky" />
           </div>
 
-          {/* Center: Chat thread */}
-          <div className="flex-1 border-r border-subtle bg-surface-panel overflow-hidden flex flex-col">
-            <ChatHeader
-              fanName={selectedConversation?.fanName || ''}
-              platform={selectedConversation?.platform || ''}
-              spend={selectedConversation?.spend || 0}
-              timestamp={selectedConversation?.timestamp || ''}
-              avatarColor={selectedConversation?.avatarColor || ''}
-            />
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map(msg => (
-                <MessageBubble
-                  key={msg.id}
-                  sender={msg.sender}
-                  text={msg.text}
-                  timestamp={msg.timestamp}
-                  confidence={msg.confidence}
-                  safety={msg.safety}
-                  mode={msg.mode}
-                />
-              ))}
-            </div>
-
-            {/* AI composer & actions */}
-            <div className="border-t border-subtle p-4 bg-surface-panel">
-              <div className="mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium text-text-tertiary uppercase tracking-wider">AI MODE</span>
-                  <div className="flex rounded border border-medium overflow-hidden">
-                    {(['Draft Only', 'Auto Low Risk', 'Sandbox'] as const).map(mode => (
-                      <button
-                        key={mode}
-                        className={cn(
-                          'px-2.5 py-1 text-xs font-medium transition font-mono',
-                          aiMode === mode
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'border-transparent hover:bg-surface-elevated text-text-secondary'
-                        )}
-                        onClick={() => setAiMode(mode)}
-                      >
-                        {mode.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Draft composer */}
-              <div className="rounded border border-medium bg-surface-elevated p-4 mb-4">
-                <p className="text-sm text-text-secondary">
-                  Hi Alex! I’d love to help with a custom video. My rates start at $50 for a 3‑minute personalized video. What did you have in mind?
-                </p>
-                <div className="mt-3 flex items-center gap-2 text-xs text-text-tertiary font-mono">
-                  <Target className="h-3 w-3 text-primary" />
-                  <span>Confidence: <span className="text-success font-medium">HIGH</span></span>
-                  <span className="text-border-medium">|</span>
-                  <span>Safety: <span className="text-success font-medium">PASSED</span></span>
-                  <span className="text-border-medium">|</span>
-                  <span className="text-primary">AI‑GENERATED</span>
-                </div>
-              </div>
-
-              {/* Action buttons - Linear precision */}
-              <div className="flex gap-2">
-                <button className="flex-1 rounded border border-medium py-2 text-xs font-medium hover:bg-surface-elevated transition flex items-center justify-center gap-2 text-text-secondary hover:text-foreground">
-                  <X className="h-3.5 w-3.5" />
-                  Reject
-                </button>
-                <button className="flex-1 rounded border border-medium py-2 text-xs font-medium hover:bg-surface-elevated transition flex items-center justify-center gap-2 text-text-secondary hover:text-foreground">
-                  <Edit className="h-3.5 w-3.5" />
-                  Edit
-                </button>
-                <button className="flex-1 rounded border border-medium py-2 text-xs font-medium hover:bg-surface-elevated transition flex items-center justify-center gap-2 text-text-secondary hover:text-foreground">
-                  <Check className="h-3.5 w-3.5" />
-                  Approve
-                </button>
-                <button className="flex-1 rounded bg-primary py-2 text-xs font-medium text-primary-foreground hover:bg-primary-hover transition flex items-center justify-center gap-2">
-                  <Send className="h-3.5 w-3.5" />
-                  Send
-                </button>
-              </div>
-
-              {/* PPV suggestion - compact attachment */}
-              <div className="mt-4 p-3 border border-medium rounded bg-success/5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Gift className="h-3.5 w-3.5 text-success" />
-                    <div>
-                      <h4 className="text-xs font-medium text-success uppercase tracking-wider">SUGGESTED PPV</h4>
-                      <p className="text-xs text-text-secondary">Cosplay Behind‑the‑Scenes — $30</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button className="rounded border border-success/30 px-2.5 py-1 text-xs hover:bg-success/10 text-success transition">
-                      Attach
-                    </button>
-                    <button className="rounded bg-success px-2.5 py-1 text-xs text-primary-foreground hover:bg-success/90 transition">
-                      Offer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Fan inspector - Linear glassmorphism */}
-          <div className="w-96 border-l border-subtle bg-surface-panel/80 backdrop-blur-sm overflow-y-auto p-5">
-            <div className="mb-5">
-              <div className="flex items-center gap-3">
-                <div className={cn('h-8 w-8 rounded flex items-center justify-center text-sm font-medium', selectedConversation?.avatarColor)}>
-                  {selectedConversation?.fanName.charAt(0)}
-                </div>
-                <div>
-                  <h2 className="text-lg font-medium tracking-tight">{selectedConversation?.fanName}</h2>
-                  <p className="text-xs text-text-tertiary font-mono">
-                    {selectedConversation?.platform} • JOINED {fanDetails.joinDate}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              {/* Spend & Value */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  SPEND & VALUE
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 border border-medium rounded bg-surface-elevated">
-                    <p className="text-xs text-text-tertiary">Total Spent</p>
-                    <p className="text-2xl font-bold tracking-tight">${fanDetails.totalSpent}</p>
-                  </div>
-                  <div className="p-3 border border-medium rounded bg-surface-elevated">
-                    <p className="text-xs text-text-tertiary">Lifetime Value</p>
-                    <p className="text-2xl font-bold tracking-tight">${fanDetails.lifetimeValue}</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Lifecycle */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  LIFECYCLE
-                </h3>
-                <div className="p-3 border border-medium rounded bg-surface-elevated">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-text-secondary">{fanDetails.lifecycleStage}</span>
-                    <span className="text-xs font-medium text-primary">HIGH‑INTENT</span>
-                  </div>
-                  <div className="h-1 rounded-full bg-border-subtle overflow-hidden">
-                    <div className="h-full w-3/4 bg-primary" />
-                  </div>
-                </div>
-              </section>
-
-              {/* Interests */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  INTERESTS
-                </h3>
-                <div className="flex flex-wrap gap-1">
-                  {fanDetails.interests.map(int => (
-                    <span key={int} className="px-2 py-1 text-xs border border-medium rounded bg-surface-elevated text-text-secondary">
-                      {int}
-                    </span>
-                  ))}
-                </div>
-              </section>
-
-              {/* Memory notes */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  MEMORY NOTES
-                </h3>
-                <div className="p-3 border border-medium rounded bg-surface-elevated">
-                  <p className="text-sm text-text-secondary">{fanDetails.memoryNotes}</p>
-                </div>
-              </section>
-
-              {/* PPV History */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  PPV HISTORY
-                </h3>
-                <div className="space-y-2">
-                  <div className="p-3 border border-medium rounded bg-surface-elevated">
-                    <p className="text-xs text-text-tertiary">Last Offered</p>
-                    <p className="text-sm font-medium">{fanDetails.lastPpvOffered}</p>
-                  </div>
-                  <div className="p-3 border border-success/30 rounded bg-success/5">
-                    <p className="text-xs text-success uppercase tracking-wider">SUGGESTED PPV</p>
-                    <p className="text-sm font-medium text-text-secondary">{fanDetails.suggestedPpv}</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* AI Trust & Safety */}
-              <section>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-text-tertiary font-mono">
-                  AI TRUST & SAFETY
-                </h3>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between py-2 border-b border-subtle last:border-0">
-                    <span className="text-sm text-text-secondary">AI Mode</span>
-                    <span className="text-sm font-medium font-mono">{fanDetails.aiMode}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-subtle last:border-0">
-                    <span className="text-sm text-text-secondary">Trust Level</span>
-                    <span className="text-sm font-medium text-success">HIGH</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-subtle last:border-0">
-                    <span className="text-sm text-text-secondary">Safety Status</span>
-                    <span className="text-sm font-medium text-success">CLEAN</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-text-secondary">Audit Status</span>
-                    <span className="text-sm font-medium text-text-tertiary">NO FLAGS</span>
-                  </div>
-                </div>
-              </section>
-            </div>
+          <div className="space-y-4">
+            {thread.map((message) => (
+              <MessageRow key={message.id} message={message} conversation={conversation} />
+            ))}
           </div>
         </div>
 
-        {/* Mobile layout - tabs */}
-        <div className="flex-1 lg:hidden flex flex-col">
-          <div className="flex-1 overflow-hidden p-4">
-            {mobileTab === 'chats' && (
-              <div className="space-y-3">
-                {conversations.map(conv => (
-                  <div
-                    key={conv.id}
-                    className="flex items-center gap-3 p-3 border border-border rounded-lg"
-                    onClick={() => setMobileTab('thread')}
-                  >
-                    <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center', conv.avatarColor)}>
-                      {conv.fanName.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium truncate">{conv.fanName}</h3>
-                        <span className="text-xs text-muted-text">{conv.timestamp}</span>
-                      </div>
-                      <p className="text-sm text-muted-text truncate">{conv.lastMessage}</p>
-                      <div className="flex items-center gap-2 mt-1 text-xs">
-                        <span>${conv.spend}</span>
-                        <div className="h-1 w-1 rounded-full bg-border" />
-                        <span>{conv.lifecycle}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {mobileTab === 'thread' && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <button onClick={() => setMobileTab('chats')} className="text-primary">
-                    ← Back
-                  </button>
-                  <h2 className="font-semibold">Chat</h2>
-                </div>
-                {/* Simplified thread for mobile */}
-                <div className="space-y-3">
-                  {messages.slice(0, 2).map(msg => (
-                    <div key={msg.id} className="p-3 border border-border rounded-lg">
-                      <p className="text-sm">{msg.text}</p>
-                      <p className="text-xs text-muted-text mt-1">{msg.timestamp}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {mobileTab === 'fan' && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <button onClick={() => setMobileTab('thread')} className="text-primary">
-                    ← Back
-                  </button>
-                  <h2 className="font-semibold">Fan Details</h2>
-                </div>
-                {/* Simplified fan details */}
-                <div className="space-y-4">
-                  <div className="p-3 border border-border rounded-lg">
-                    <p className="text-sm font-medium">Spend & Value</p>
-                    <div className="flex justify-between mt-2">
-                      <span className="text-xs text-muted-text">Total Spent</span>
-                      <span className="font-medium">${fanDetails.totalSpent}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {mobileTab === 'ppv' && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <button onClick={() => setMobileTab('thread')} className="text-primary">
-                    ← Back
-                  </button>
-                  <h2 className="font-semibold">PPV</h2>
-                </div>
-                {/* PPV suggestions */}
-                <div className="p-3 border border-border rounded-lg">
-                  <p className="text-sm font-medium">Suggested PPV</p>
-                  <p className="text-sm text-muted-text mt-1">{fanDetails.suggestedPpv}</p>
-                  <button className="w-full mt-3 py-2 bg-primary text-surface rounded-md text-sm font-medium">
-                    Offer Now
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile tab bar */}
-          <div className="border-t border-border">
-            <div className="flex">
-              {(['chats', 'thread', 'fan', 'ppv'] as MobileTab[]).map(tab => (
+        <div className="border-t border-white/10 bg-black/20 p-4 backdrop-blur-xl md:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">AI Draft Surface</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">Next best reply</h2>
+            </div>
+            <div className="flex overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-1">
+              {(['Draft Only', 'Auto Low Risk', 'Sandbox'] as const).map((mode) => (
                 <button
-                  key={tab}
+                  key={mode}
+                  onClick={() => onModeChange(mode)}
                   className={cn(
-                    'flex-1 py-3 text-xs font-medium flex flex-col items-center gap-1',
-                    mobileTab === tab ? 'text-primary' : 'text-muted-text'
+                    'rounded-xl px-3 py-1.5 text-xs font-medium transition',
+                    aiMode === mode ? 'bg-sky-300 text-slate-950' : 'text-slate-400 hover:bg-white/10 hover:text-slate-100'
                   )}
-                  onClick={() => setMobileTab(tab)}
                 >
-                  {tab === 'chats' && <MessageSquare className="h-4 w-4" />}
-                  {tab === 'thread' && <User className="h-4 w-4" />}
-                  {tab === 'fan' && <Target className="h-4 w-4" />}
-                  {tab === 'ppv' && <Gift className="h-4 w-4" />}
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {mode}
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-[24px] border border-sky-200/20 bg-[linear-gradient(135deg,rgba(56,189,248,0.13),rgba(255,255,255,0.045)_45%,rgba(16,185,129,0.08))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
+            <div className="mb-3 flex items-center gap-2 text-xs text-sky-100">
+              <Wand2 className="h-4 w-4" />
+              <span>Generated from 3 memories, latest message, and PPV catalog</span>
+            </div>
+            <p className="text-[15px] leading-7 text-slate-100">
+              Hi Alex, I can do a 5-minute custom. For that level of personalization I would price it at $100 and make it feel more tailored to you. Want me to send the details and lock the slot?
+            </p>
+            <div className="mt-4 grid gap-2 text-xs md:grid-cols-4">
+              <DraftSignal label="Intent" value="Custom request" />
+              <DraftSignal label="Sales fit" value="High" tone="emerald" />
+              <DraftSignal label="Safety" value="Passed" tone="emerald" />
+              <DraftSignal label="Mode" value={aiMode} tone="amber" />
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+            <ActionButton icon={X} label="Reject" />
+            <ActionButton icon={Pause} label="Pause AI" />
+            <ActionButton icon={Check} label="Approve" />
+            <ActionButton icon={Send} label="Send" primary />
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 rounded-[22px] border border-emerald-300/20 bg-emerald-300/[0.07] p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-300/10">
+                <Gift className="h-5 w-5 text-emerald-200" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">Suggested PPV</p>
+                <p className="text-sm font-semibold text-white">
+                  {fanDetails.offer} · ${fanDetails.offerPrice}
+                </p>
+              </div>
+            </div>
+            <button className="rounded-2xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-200">
+              Attach offer
+            </button>
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+function FanIntelligence({
+  conversation,
+  fanDetails,
+  compact = false,
+}: {
+  conversation: Conversation;
+  fanDetails: (typeof fanProfiles)[keyof typeof fanProfiles];
+  compact?: boolean;
+}) {
+  return (
+    <aside className={cn('min-h-0 space-y-3 overflow-y-auto', compact ? '' : 'pr-1')}>
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_20px_80px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-2xl">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Fan Intelligence</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">{conversation.fanName}</h2>
+            <p className="text-xs text-slate-400">Joined {fanDetails.joined}</p>
+          </div>
+          <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-black/20 text-slate-300 transition hover:bg-white/10">
+            <UserRound className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <ValueTile label="Total spent" value={`$${conversation.spend}`} />
+          <ValueTile label="Lifetime value" value={`$${conversation.lifetimeValue}`} />
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Signal stack</h3>
+          <span className="rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[11px] text-slate-400">
+            {conversation.lifecycle}
+          </span>
+        </div>
+        <div className="space-y-4">
+          {fanDetails.signals.map((signal) => (
+            <SignalBar key={signal.label} {...signal} />
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Memory timeline</h3>
+          <Brain className="h-4 w-4 text-sky-200" />
+        </div>
+        <div className="space-y-3">
+          {fanDetails.memories.map((memory, index) => (
+            <div key={memory} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span className="h-2.5 w-2.5 rounded-full bg-sky-300" />
+                {index < fanDetails.memories.length - 1 && <span className="mt-1 h-full w-px bg-white/10" />}
+              </div>
+              <p className="pb-3 text-sm leading-6 text-slate-300">{memory}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Offer engine</h3>
+          <ArrowUpRight className="h-4 w-4 text-emerald-200" />
+        </div>
+        <div className="rounded-[22px] border border-emerald-300/20 bg-emerald-300/[0.06] p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">Next offer</p>
+          <p className="mt-2 text-base font-semibold text-white">{fanDetails.offer}</p>
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-2xl font-semibold tracking-tight text-white">${fanDetails.offerPrice}</span>
+            <span className="rounded-full bg-emerald-300 px-3 py-1 text-xs font-semibold text-slate-950">
+              {fanDetails.conversion}% fit
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Controls</h3>
+          <LockKeyhole className="h-4 w-4 text-slate-400" />
+        </div>
+        <div className="grid gap-2">
+          {commandItems.map((item) => (
+            <button key={item} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-white/10">
+              {item}
+              <ChevronRight className="h-4 w-4 text-slate-600" />
+            </button>
+          ))}
+        </div>
+      </section>
+    </aside>
+  );
+}
+
+function MessageRow({
+  message,
+  conversation,
+}: {
+  message: (typeof thread)[number];
+  conversation: Conversation;
+}) {
+  const isAi = message.sender === 'ai';
+
+  return (
+    <div className={cn('flex', isAi ? 'justify-end' : 'justify-start')}>
+      <div className={cn('max-w-[760px]', isAi ? 'ml-8' : 'mr-8')}>
+        <div
+          className={cn(
+            'rounded-[24px] border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.09)]',
+            isAi
+              ? 'border-sky-200/18 bg-sky-300/[0.08]'
+              : 'border-white/10 bg-white/[0.055]'
+          )}
+        >
+          <div className="mb-2 flex items-center justify-between gap-4">
+            <span className="text-xs font-semibold text-slate-300">{isAi ? 'AI Draft' : conversation.fanName}</span>
+            <span className="text-xs text-slate-500">{message.timestamp}</span>
+          </div>
+          <p className="text-[15px] leading-7 text-slate-100">{message.text}</p>
+          {isAi && (
+            <div className="mt-4 grid gap-2 border-t border-white/10 pt-3 text-xs md:grid-cols-3">
+              <DraftSignal label="Intent" value={message.intent ?? 'Relationship'} />
+              <DraftSignal label="Sales fit" value={message.salesFit ?? 'Medium'} tone="emerald" />
+              <DraftSignal label="Safety" value={message.safety ?? 'Passed'} tone="emerald" />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
+  );
+}
+
+function Avatar({
+  conversation,
+  size = 'md',
+}: {
+  conversation: Conversation;
+  size?: 'sm' | 'md';
+}) {
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]',
+        conversation.avatarTone,
+        size === 'sm' ? 'h-9 w-9 text-sm' : 'h-12 w-12 text-base'
+      )}
+    >
+      {conversation.fanName.charAt(0)}
+    </div>
+  );
+}
+
+function StatusChip({
+  icon: Icon,
+  label,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  tone: 'sky' | 'emerald';
+}) {
+  return (
+    <span
+      className={cn(
+        'hidden items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-medium backdrop-blur-xl sm:flex',
+        tone === 'sky'
+          ? 'border-sky-300/20 bg-sky-300/10 text-sky-100'
+          : 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </span>
+  );
+}
+
+function MetricPill({
+  label,
+  value,
+  tone = 'slate',
+}: {
+  label: string;
+  value: string;
+  tone?: 'slate' | 'amber' | 'emerald';
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p
+        className={cn(
+          'mt-1 text-lg font-semibold',
+          tone === 'emerald' && 'text-emerald-200',
+          tone === 'amber' && 'text-amber-200',
+          tone === 'slate' && 'text-white'
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function InsightTile({
+  icon: Icon,
+  label,
+  value,
+  tone = 'slate',
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone?: 'slate' | 'sky' | 'emerald';
+}) {
+  return (
+    <div className="rounded-[22px] border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
+        <Icon
+          className={cn(
+            'h-4 w-4',
+            tone === 'sky' && 'text-sky-200',
+            tone === 'emerald' && 'text-emerald-200',
+            tone === 'slate' && 'text-slate-400'
+          )}
+        />
+      </div>
+      <p className="text-sm font-semibold leading-5 text-white">{value}</p>
+    </div>
+  );
+}
+
+function ValueTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-white">{value}</p>
+    </div>
+  );
+}
+
+function SignalBar({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between text-sm">
+        <span className="text-slate-300">{label}</span>
+        <span className="text-slate-500">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className={cn('h-full rounded-full', tone)} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function DraftSignal({
+  label,
+  value,
+  tone = 'sky',
+}: {
+  label: string;
+  value: string;
+  tone?: 'sky' | 'emerald' | 'amber';
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p
+        className={cn(
+          'mt-1 truncate text-xs font-semibold',
+          tone === 'sky' && 'text-sky-100',
+          tone === 'emerald' && 'text-emerald-100',
+          tone === 'amber' && 'text-amber-100'
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  label,
+  primary = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      className={cn(
+        'flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-semibold transition',
+        primary
+          ? 'bg-sky-300 text-slate-950 hover:bg-sky-200'
+          : 'border border-white/10 bg-white/[0.045] text-slate-300 hover:bg-white/10 hover:text-white'
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
   );
 }
